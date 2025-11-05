@@ -36,7 +36,8 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
     const parent = canvas.parentElement!
 
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1
+      // Limit DPR to 2 for performance on high-DPI mobile devices
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const w = parent.clientWidth
       const h = Math.max(280, Math.min(640, Math.round((parent.clientWidth) * 0.66)))
       canvas.style.width = w + 'px'
@@ -53,7 +54,9 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
 
   // Init drops
   useEffect(() => {
-    const N = 90 // number of drops
+    // Reduce drops on mobile for performance
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+    const N = isMobile ? 45 : 90 // number of drops
     const drops: Drop[] = []
     for (let i = 0; i < N; i++) {
       drops.push({ x: Math.random(), y: Math.random(), vy: 0 })
@@ -75,7 +78,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
     const step = (ts: number) => {
       const canvas = canvasRef.current!
       const ctx = canvas.getContext('2d')!
-      const dpr = window.devicePixelRatio || 1
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const width = canvas.width
       const height = canvas.height
 
@@ -92,25 +95,28 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
       ctx.fillStyle = '#0f0f0f'
       ctx.fillRect(0, 0, width, height)
 
-      // Subtle grid
-      ctx.save()
-      ctx.globalAlpha = 0.12
-      ctx.strokeStyle = '#0b2a33'
-      ctx.lineWidth = 1
-      const grid = 64 * (window.devicePixelRatio || 1)
-      for (let x = 0; x < width; x += grid) {
-        ctx.beginPath()
-        ctx.moveTo(x, 0)
-        ctx.lineTo(x, height)
-        ctx.stroke()
+      // Subtle grid (skip on mobile for performance)
+      const isMobile = width < 768 * dpr
+      if (!isMobile) {
+        ctx.save()
+        ctx.globalAlpha = 0.12
+        ctx.strokeStyle = '#0b2a33'
+        ctx.lineWidth = 1
+        const grid = 64 * dpr
+        for (let x = 0; x < width; x += grid) {
+          ctx.beginPath()
+          ctx.moveTo(x, 0)
+          ctx.lineTo(x, height)
+          ctx.stroke()
+        }
+        for (let y = 0; y < height; y += grid) {
+          ctx.beginPath()
+          ctx.moveTo(0, y)
+          ctx.lineTo(width, y)
+          ctx.stroke()
+        }
+        ctx.restore()
       }
-      for (let y = 0; y < height; y += grid) {
-        ctx.beginPath()
-        ctx.moveTo(0, y)
-        ctx.lineTo(width, y)
-        ctx.stroke()
-      }
-      ctx.restore()
 
       // Physics update
       const vt = vtRef.current || 9 // fallback
@@ -156,17 +162,22 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
 
+      // Skip trails on mobile for performance
+      const showTrails = width >= 768 * dpr
+
       drops.forEach((d, i) => {
         const x = d.x * width
         const y = d.y * height
 
-        // trail
-        ctx.beginPath()
-        ctx.strokeStyle = 'rgba(0,217,255,0.12)'
-        ctx.lineWidth = 1
-        ctx.moveTo(x - vx * arrowScale * 0.2, y - d.vy * arrowScale * 0.2)
-        ctx.lineTo(x, y)
-        ctx.stroke()
+        // trail (desktop only)
+        if (showTrails) {
+          ctx.beginPath()
+          ctx.strokeStyle = 'rgba(0,217,255,0.12)'
+          ctx.lineWidth = 1
+          ctx.moveTo(x - vx * arrowScale * 0.2, y - d.vy * arrowScale * 0.2)
+          ctx.lineTo(x, y)
+          ctx.stroke()
+        }
 
         // drop
         ctx.beginPath()

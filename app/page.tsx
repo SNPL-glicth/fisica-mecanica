@@ -41,29 +41,31 @@ export default function Page() {
   }, [diameterMM, wind, heightM, rhoAir])
 
   return (
-    <main className="px-4 py-8 md:py-10 max-w-7xl mx-auto">
-      <header className="mb-6 md:mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+    <main className="px-3 sm:px-4 py-4 sm:py-6 md:py-10 max-w-7xl mx-auto">
+      <header className="mb-4 sm:mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">
               Lluvia, Inercia y Fuerza: Simulación Interactiva
             </h1>
-            <p className="text-white/70 mt-2">
+            <p className="text-white/70 mt-1 sm:mt-2 text-sm sm:text-base hidden sm:block">
               Dark mode estilo Cursor. Ajusta viento, tamaño de gota y altura. Observa cómo la inercia (1ª Ley) y
               F=ma (2ª Ley) gobiernan la caída.
             </p>
           </div>
-          <ThemeToggle 
-            visualMode={visualMode} 
-            onToggle={() => setVisualMode(visualMode === 'physics' ? 'urban' : 'physics')} 
-          />
+          <div className="flex-shrink-0">
+            <ThemeToggle 
+              visualMode={visualMode} 
+              onToggle={() => setVisualMode(visualMode === 'physics' ? 'urban' : 'physics')} 
+            />
+          </div>
         </div>
       </header>
 
-      <section className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
         {/* Izquierda 60% */}
-        <div className="lg:col-span-3 xl:col-span-3 space-y-4">
-          <div className="card p-2 md:p-3">
+        <div className="lg:col-span-3 xl:col-span-3 space-y-3 sm:space-y-4">
+          <div className="card p-2">
             <SimulationCanvas
               wind={wind}
               diameterMM={diameterMM}
@@ -77,16 +79,16 @@ export default function Page() {
             />
           </div>
 
-          {/* Fórmulas debajo del simulador */}
-          <div className="card p-4">
-            <h2 className="text-xl font-semibold mb-4 text-cyan">Fundamento Físico y Fórmulas Clave</h2>
+          {/* Fórmulas debajo del simulador - oculto en móvil por defecto */}
+          <div className="card p-3 sm:p-4 hidden sm:block">
+            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-cyan">Fundamento Físico y Fórmulas Clave</h2>
             <Formulas impactDt={derived.impactDt} Cd={Cd} />
           </div>
         </div>
 
         {/* Derecha 40% */}
-        <div className="lg:col-span-2 xl:col-span-2 space-y-4">
-          <div className="card p-4">
+        <div className="lg:col-span-2 xl:col-span-2 space-y-3 sm:space-y-4">
+          <div className="card p-3 sm:p-4">
             <ControlsPanel
               wind={wind}
               setWind={setWind}
@@ -109,11 +111,11 @@ export default function Page() {
             />
           </div>
 
-          <div className="card p-4">
+          <div className="card p-3 sm:p-4">
             <VectorDiagram Vx={derived.Vx} Vy={derived.Vy} Vr={derived.Vr} theta={derived.theta} />
           </div>
 
-          <div className="card p-4">
+          <div className="card p-3 sm:p-4">
             <DataTable
               vt={derived.vt}
               Vx={derived.Vx}
