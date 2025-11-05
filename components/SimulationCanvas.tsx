@@ -148,7 +148,8 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
       // Draw drops and vectors
       const r_px = Math.max(1, (diameterMM / 1000 / 2) * scale)
       const arrowScale = Math.max(0.05 * scale, 0.5) // px per (m/s)
-      const forceScale = Math.max(5e5 * scale, 10) // px per N (scaled appropriately)
+      // Adjust force scale to be visible: force is very small (~10^-5 N)
+      const forceScale = 1e6 * scale // px per N (scaled to make forces visible)
 
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
@@ -173,52 +174,57 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
         ctx.fill()
         ctx.globalAlpha = 1
 
-        if (!showForceVectors) {
-          // VELOCITY VECTORS
-          const vx_px = vx * arrowScale
-          const vy_px = d.vy * arrowScale
-          const vrx = vx_px
-          const vry = vy_px
+        // Only draw vectors if drop is above ground (85% of height)
+        const isAboveGround = y < height * 0.85
+        
+        if (isAboveGround) {
+          if (!showForceVectors) {
+            // VELOCITY VECTORS
+            const vx_px = vx * arrowScale
+            const vy_px = d.vy * arrowScale
+            const vrx = vx_px
+            const vry = vy_px
 
-          // Vx (cyan)
-          drawArrow(ctx, x, y, x + vx_px, y, '#00d9ff')
-          // Vy (blue, down)
-          drawArrow(ctx, x, y, x, y + vy_px, '#0099ff')
-          // Vr (green)
-          drawArrow(ctx, x, y, x + vrx, y + vry, '#00ff88')
+            // Vx (cyan)
+            drawArrow(ctx, x, y, x + vx_px, y, '#00d9ff')
+            // Vy (blue, down)
+            drawArrow(ctx, x, y, x, y + vy_px, '#0099ff')
+            // Vr (green)
+            drawArrow(ctx, x, y, x + vrx, y + vry, '#00ff88')
 
-          // Angle only for first few drops to reduce clutter
-          if (i % 20 === 0) {
-            drawAngle(ctx, x, y, vx_px, vy_px)
+            // Angle only for first few drops to reduce clutter
+            if (i % 20 === 0) {
+              drawAngle(ctx, x, y, vx_px, vy_px)
+            }
+          } else {
+            // FORCE VECTORS
+            const d_m = diameterMM / 1000
+            const m = computeMass(d_m)
+            const A = computeArea(d_m)
+            const g = 9.81
+            
+            // Fg (gravity) - yellow, pointing down
+            const Fg = m * g
+            const Fg_px = Fg * forceScale
+            drawArrow(ctx, x, y, x, y + Fg_px, '#ffcc00', 2)
+            
+            // Fa (drag) - red, pointing opposite to Vr
+            const Vr_ms = Math.hypot(vx, d.vy)
+            const Fa = 0.5 * rhoAir * A * Cd * Vr_ms * Vr_ms
+            const Fa_px = Fa * forceScale
+            
+            // Direction opposite to velocity (upward and against wind)
+            const angle = Math.atan2(d.vy, vx)
+            const Fa_x = -Math.cos(angle) * Fa_px
+            const Fa_y = -Math.sin(angle) * Fa_px
+            drawArrow(ctx, x, y, x + Fa_x, y + Fa_y, '#ff4444', 2)
+            
+            // Fnet (net force) - white
+            const Fnet = Fg - Fa // scalar net force magnitude
+            const Fnet_px = Math.abs(Fnet) * forceScale
+            const Fnet_dir = Fnet > 0 ? 1 : -1 // down if positive, up if negative
+            drawArrow(ctx, x, y, x, y + Fnet_dir * Fnet_px, '#ffffff', 2)
           }
-        } else {
-          // FORCE VECTORS
-          const d_m = diameterMM / 1000
-          const m = computeMass(d_m)
-          const A = computeArea(d_m)
-          const g = 9.81
-          
-          // Fg (gravity) - yellow, pointing down
-          const Fg = m * g
-          const Fg_px = Fg * forceScale
-          drawArrow(ctx, x, y, x, y + Fg_px, '#ffcc00')
-          
-          // Fa (drag) - red, pointing opposite to Vr
-          const Vr_ms = Math.hypot(vx, d.vy)
-          const Fa = 0.5 * rhoAir * A * Cd * Vr_ms * Vr_ms
-          const Fa_px = Fa * forceScale
-          
-          // Direction opposite to velocity
-          const angle = Math.atan2(d.vy, vx)
-          const Fa_x = -Math.cos(angle) * Fa_px
-          const Fa_y = -Math.sin(angle) * Fa_px
-          drawArrow(ctx, x, y, x + Fa_x, y + Fa_y, '#ff4444')
-          
-          // Fnet (net force) - white
-          const Fnet = Fg - Fa // scalar net force magnitude
-          const Fnet_px = Math.abs(Fnet) * forceScale
-          const Fnet_dir = Fnet > 0 ? 1 : -1 // down if positive, up if negative
-          drawArrow(ctx, x, y, x, y + Fnet_dir * Fnet_px, '#ffffff')
         }
       })
 
@@ -229,7 +235,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current)
     }
-  }, [wind, diameterMM, heightM, paused])
+  }, [wind, diameterMM, heightM, paused, showForceVectors, rhoAir, Cd])
 
   const scale = canvasDims.height / heightM // px per meter
   const terminalLineY = terminalHeight * scale // Convert meters to pixels
@@ -284,10 +290,10 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
   )
 }
 
-function drawArrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string) {
+function drawArrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string, lineWidth: number = 2) {
   ctx.beginPath()
   ctx.strokeStyle = color
-  ctx.lineWidth = 2
+  ctx.lineWidth = lineWidth
   ctx.moveTo(x1, y1)
   ctx.lineTo(x2, y2)
   ctx.stroke()
