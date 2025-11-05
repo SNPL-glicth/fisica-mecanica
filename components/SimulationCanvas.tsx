@@ -208,24 +208,26 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
             // Fg (gravity) - yellow, pointing down
             const Fg = m * g
             const Fg_px = Fg * forceScale
-            drawArrow(ctx, x, y, x, y + Fg_px, '#ffcc00', 2.5)
+            // Fg is purely vertical (down)
+            const Fg_x = 0
+            const Fg_y = Fg_px
+            drawArrow(ctx, x, y, x + Fg_x, y + Fg_y, '#ffcc00', 2.5)
             
             // Fa (drag) - red, pointing opposite to Vr
             const Vr_ms = Math.hypot(vx, d.vy)
-            const Fa = 0.5 * rhoAir * A * Cd * Vr_ms * Vr_ms
-            const Fa_px = Fa * forceScale
+            const Fa_magnitude = 0.5 * rhoAir * A * Cd * Vr_ms * Vr_ms
+            const Fa_px = Fa_magnitude * forceScale
             
             // Direction opposite to velocity (upward and against wind)
-            const angle = Math.atan2(d.vy, vx)
-            const Fa_x = -Math.cos(angle) * Fa_px
-            const Fa_y = -Math.sin(angle) * Fa_px
+            const velocityAngle = Math.atan2(d.vy, vx)
+            const Fa_x = -Math.cos(velocityAngle) * Fa_px
+            const Fa_y = -Math.sin(velocityAngle) * Fa_px
             drawArrow(ctx, x, y, x + Fa_x, y + Fa_y, '#ff4444', 2.5)
             
-            // Fnet (net force) - white
-            const Fnet = Fg - Fa // scalar net force magnitude
-            const Fnet_px = Math.abs(Fnet) * forceScale
-            const Fnet_dir = Fnet > 0 ? 1 : -1 // down if positive, up if negative
-            drawArrow(ctx, x, y, x, y + Fnet_dir * Fnet_px, '#ffffff', 2.5)
+            // Fnet (net force) - white - VECTOR SUM: Fnet = Fg + Fa
+            const Fnet_x = Fg_x + Fa_x // horizontal component
+            const Fnet_y = Fg_y + Fa_y // vertical component
+            drawArrow(ctx, x, y, x + Fnet_x, y + Fnet_y, '#ffffff', 2.5)
           }
         }
       })
