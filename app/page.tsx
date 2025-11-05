@@ -47,13 +47,21 @@ export default function Page() {
 
       <section className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
         {/* Izquierda 60% */}
-        <div className="lg:col-span-3 xl:col-span-3 card p-2 md:p-3">
-          <SimulationCanvas
-            wind={wind}
-            diameterMM={diameterMM}
-            heightM={heightM}
-            paused={paused}
-          />
+        <div className="lg:col-span-3 xl:col-span-3 space-y-4">
+          <div className="card p-2 md:p-3">
+            <SimulationCanvas
+              wind={wind}
+              diameterMM={diameterMM}
+              heightM={heightM}
+              paused={paused}
+            />
+          </div>
+
+          {/* Fórmulas debajo del simulador */}
+          <div className="card p-4">
+            <h2 className="text-xl font-semibold mb-4 text-cyan">Fundamento Físico y Fórmulas Clave</h2>
+            <Formulas impactDt={derived.impactDt} Cd={Cd} />
+          </div>
         </div>
 
         {/* Derecha 40% */}
@@ -91,10 +99,6 @@ export default function Page() {
               tFall={derived.tFall}
               impactDt={derived.impactDt}
             />
-          </div>
-
-          <div className="card p-4">
-            <Formulas impactDt={derived.impactDt} Cd={Cd} />
           </div>
         </div>
       </section>

@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { computeArea, computeMass, terminalVelocityY } from '@/lib/physics'
+import PixelArtLandscape from './PixelArtLandscape'
 type Drop = {
   x: number // m
   y: number // m (0 top -> H bottom)
@@ -21,6 +22,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
   const dropsRef = useRef<Drop[]>([])
   const lastRef = useRef<number>(0)
   const vtRef = useRef<number>(0)
+  const [canvasDims, setCanvasDims] = useState({ width: 0, height: 0 })
 
   // Resize canvas to container
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
       canvas.style.height = h + 'px'
       canvas.width = Math.floor(w * dpr)
       canvas.height = Math.floor(h * dpr)
+      setCanvasDims({ width: canvas.width, height: canvas.height })
     }
     resize()
     const ro = new ResizeObserver(resize)
@@ -191,9 +194,18 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
     }
   }, [wind, diameterMM, heightM, paused])
 
+  const scale = canvasDims.height / heightM // px per meter
+
   return (
     <div className="relative">
       <canvas ref={canvasRef} className="w-full h-[50vh] rounded-lg border border-cyan/20" />
+      {canvasDims.width > 0 && (
+        <PixelArtLandscape 
+          width={canvasDims.width} 
+          height={canvasDims.height} 
+          scale={scale}
+        />
+      )}
       <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-white/5" />
       <LegendOverlay />
     </div>
