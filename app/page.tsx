@@ -5,6 +5,7 @@ import SimulationCanvas from '@/components/SimulationCanvas'
 import VectorDiagram from '@/components/VectorDiagram'
 import DataTable from '@/components/DataTable'
 import Formulas from '@/components/Formulas'
+import ThemeToggle from '@/components/ThemeToggle'
 import { useState, useMemo } from 'react'
 import { angleThetaDeg, computeArea, computeMass, fallTime, resultantVr, terminalVelocityY } from '@/lib/physics'
 
@@ -13,8 +14,10 @@ export default function Page() {
   const [diameterMM, setDiameterMM] = useState(3) // mm
   const [heightM, setHeightM] = useState(500) // m
   const [paused, setPaused] = useState(false)
+  const [rhoAir, setRhoAir] = useState(1.225) // kg/m³
+  const [visualMode, setVisualMode] = useState<'physics' | 'urban'>('physics')
+  const [showForceVectors, setShowForceVectors] = useState(false)
   const g = 9.81
-  const rhoAir = 1.225
   const Cd = 0.47
 
   const derived = useMemo(() => {
@@ -30,19 +33,31 @@ export default function Page() {
     const massMg = m * 1e6
     const impactDt = 0.01 // s, supuesto
     const F = (m * Vr) / impactDt
-    return { d_m, m, A, vt, Vy, Vx, Vr, theta, tFall, massMg, F, impactDt }
-  }, [diameterMM, wind, heightM])
+    const Fa = 0.5 * rhoAir * A * Cd * vt * vt // Force of drag at terminal velocity
+    const Fg = m * g // Force of gravity
+    const Fnet = Fg - Fa // Net force (Fg down - Fa up)
+    const terminalHeight = (vt * vt * 0.99) / (2 * g) // Height to reach 99% terminal velocity
+    return { d_m, m, A, vt, Vy, Vx, Vr, theta, tFall, massMg, F, Fa, Fg, Fnet, impactDt, terminalHeight }
+  }, [diameterMM, wind, heightM, rhoAir])
 
   return (
     <main className="px-4 py-8 md:py-10 max-w-7xl mx-auto">
       <header className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          Lluvia, Inercia y Fuerza: Simulación Interactiva
-        </h1>
-        <p className="text-white/70 mt-2">
-          Dark mode estilo Cursor. Ajusta viento, tamaño de gota y altura. Observa cómo la inercia (1ª Ley) y
-          F=ma (2ª Ley) gobiernan la caída.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+              Lluvia, Inercia y Fuerza: Simulación Interactiva
+            </h1>
+            <p className="text-white/70 mt-2">
+              Dark mode estilo Cursor. Ajusta viento, tamaño de gota y altura. Observa cómo la inercia (1ª Ley) y
+              F=ma (2ª Ley) gobiernan la caída.
+            </p>
+          </div>
+          <ThemeToggle 
+            visualMode={visualMode} 
+            onToggle={() => setVisualMode(visualMode === 'physics' ? 'urban' : 'physics')} 
+          />
+        </div>
       </header>
 
       <section className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
@@ -54,6 +69,11 @@ export default function Page() {
               diameterMM={diameterMM}
               heightM={heightM}
               paused={paused}
+              rhoAir={rhoAir}
+              visualMode={visualMode}
+              terminalHeight={derived.terminalHeight}
+              showForceVectors={showForceVectors}
+              Cd={Cd}
             />
           </div>
 
@@ -74,12 +94,17 @@ export default function Page() {
               setDiameterMM={setDiameterMM}
               heightM={heightM}
               setHeightM={setHeightM}
+              rhoAir={rhoAir}
+              setRhoAir={setRhoAir}
               paused={paused}
               setPaused={setPaused}
+              showForceVectors={showForceVectors}
+              setShowForceVectors={setShowForceVectors}
               onReset={() => {
                 setWind(8)
                 setDiameterMM(3)
                 setHeightM(500)
+                setRhoAir(1.225)
               }}
             />
           </div>
@@ -96,6 +121,10 @@ export default function Page() {
               theta={derived.theta}
               massMg={derived.massMg}
               force={derived.F}
+              dragForce={derived.Fa}
+              gravityForce={derived.Fg}
+              netForce={derived.Fnet}
+              rhoAir={rhoAir}
               tFall={derived.tFall}
               impactDt={derived.impactDt}
             />

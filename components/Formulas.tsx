@@ -30,6 +30,21 @@ export default function Formulas({ impactDt, Cd }: { impactDt: number, Cd: numbe
         tip="Ángulo entre la vertical (Vy) y la resultante Vr."
       />
       <Formula
+        title="Fuerza de Gravedad"
+        expr="Fg = m·g"
+        tip="Fuerza constante que actúa hacia abajo sobre la gota, proporcional a su masa."
+      />
+      <Formula
+        title="Fuerza de Arrastre"
+        expr="Fa = ½·ρ·Vr²·A·Cd"
+        tip="Fuerza de resistencia del aire, proporcional al cuadrado de la velocidad."
+      />
+      <Formula
+        title="Fuerza Neta"
+        expr="Fneta = Fg - Fa"
+        tip="Suma vectorial de las fuerzas. Cuando Fneta=0, la gota alcanza velocidad terminal."
+      />
+      <Formula
         title="Fuerza de Impacto"
         expr={`F = m·Vr / Δt (Δt≈${impactDt}s)`}
         tip="Aproximación impulsiva: la gota se detiene en un tiempo muy corto al tocar el suelo."

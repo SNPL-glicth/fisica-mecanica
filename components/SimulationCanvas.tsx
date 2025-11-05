@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { computeArea, computeMass, terminalVelocityY } from '@/lib/physics'
 import PixelArtLandscape from './PixelArtLandscape'
+import UrbanLandscape from './UrbanLandscape'
 type Drop = {
   x: number // m
   y: number // m (0 top -> H bottom)
@@ -14,9 +15,14 @@ type Props = {
   diameterMM: number
   heightM: number
   paused: boolean
+  rhoAir: number
+  visualMode: 'physics' | 'urban'
+  terminalHeight: number
+  showForceVectors: boolean
+  Cd: number
 }
 
-export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: Props) {
+export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rhoAir, visualMode, terminalHeight, showForceVectors, Cd }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const animRef = useRef<number | null>(null)
   const dropsRef = useRef<Drop[]>([])
@@ -55,13 +61,13 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
     dropsRef.current = drops
   }, [])
 
-  // Update vt when diameter changes
+  // Update vt when diameter or air density changes
   useEffect(() => {
     const d_m = diameterMM / 1000
     const m = computeMass(d_m)
     const A = computeArea(d_m)
-    vtRef.current = terminalVelocityY(m, 1.225, A, 0.47)
-  }, [diameterMM])
+    vtRef.current = terminalVelocityY(m, rhoAir, A, 0.47)
+  }, [diameterMM, rhoAir])
 
   // Animation loop
   useEffect(() => {
@@ -142,6 +148,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
       // Draw drops and vectors
       const r_px = Math.max(1, (diameterMM / 1000 / 2) * scale)
       const arrowScale = Math.max(0.05 * scale, 0.5) // px per (m/s)
+      const forceScale = Math.max(5e5 * scale, 10) // px per N (scaled appropriately)
 
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
@@ -166,22 +173,52 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
         ctx.fill()
         ctx.globalAlpha = 1
 
-        // vectors
-        const vx_px = vx * arrowScale
-        const vy_px = d.vy * arrowScale
-        const vrx = vx_px
-        const vry = vy_px
+        if (!showForceVectors) {
+          // VELOCITY VECTORS
+          const vx_px = vx * arrowScale
+          const vy_px = d.vy * arrowScale
+          const vrx = vx_px
+          const vry = vy_px
 
-        // Vx (cyan)
-        drawArrow(ctx, x, y, x + vx_px, y, '#00d9ff')
-        // Vy (blue, down)
-        drawArrow(ctx, x, y, x, y + vy_px, '#0099ff')
-        // Vr (green)
-        drawArrow(ctx, x, y, x + vrx, y + vry, '#00ff88')
+          // Vx (cyan)
+          drawArrow(ctx, x, y, x + vx_px, y, '#00d9ff')
+          // Vy (blue, down)
+          drawArrow(ctx, x, y, x, y + vy_px, '#0099ff')
+          // Vr (green)
+          drawArrow(ctx, x, y, x + vrx, y + vry, '#00ff88')
 
-        // Angle only for first few drops to reduce clutter
-        if (i % 20 === 0) {
-          drawAngle(ctx, x, y, vx_px, vy_px)
+          // Angle only for first few drops to reduce clutter
+          if (i % 20 === 0) {
+            drawAngle(ctx, x, y, vx_px, vy_px)
+          }
+        } else {
+          // FORCE VECTORS
+          const d_m = diameterMM / 1000
+          const m = computeMass(d_m)
+          const A = computeArea(d_m)
+          const g = 9.81
+          
+          // Fg (gravity) - yellow, pointing down
+          const Fg = m * g
+          const Fg_px = Fg * forceScale
+          drawArrow(ctx, x, y, x, y + Fg_px, '#ffcc00')
+          
+          // Fa (drag) - red, pointing opposite to Vr
+          const Vr_ms = Math.hypot(vx, d.vy)
+          const Fa = 0.5 * rhoAir * A * Cd * Vr_ms * Vr_ms
+          const Fa_px = Fa * forceScale
+          
+          // Direction opposite to velocity
+          const angle = Math.atan2(d.vy, vx)
+          const Fa_x = -Math.cos(angle) * Fa_px
+          const Fa_y = -Math.sin(angle) * Fa_px
+          drawArrow(ctx, x, y, x + Fa_x, y + Fa_y, '#ff4444')
+          
+          // Fnet (net force) - white
+          const Fnet = Fg - Fa // scalar net force magnitude
+          const Fnet_px = Math.abs(Fnet) * forceScale
+          const Fnet_dir = Fnet > 0 ? 1 : -1 // down if positive, up if negative
+          drawArrow(ctx, x, y, x, y + Fnet_dir * Fnet_px, '#ffffff')
         }
       })
 
@@ -195,19 +232,54 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused }: 
   }, [wind, diameterMM, heightM, paused])
 
   const scale = canvasDims.height / heightM // px per meter
+  const terminalLineY = terminalHeight * scale // Convert meters to pixels
 
   return (
     <div className="relative">
       <canvas ref={canvasRef} className="w-full h-[50vh] rounded-lg border border-cyan/20" />
-      {canvasDims.width > 0 && (
+      {canvasDims.width > 0 && visualMode === 'physics' && (
         <PixelArtLandscape 
           width={canvasDims.width} 
           height={canvasDims.height} 
           scale={scale}
         />
       )}
+      {canvasDims.width > 0 && visualMode === 'urban' && (
+        <UrbanLandscape 
+          width={canvasDims.width} 
+          height={canvasDims.height} 
+          scale={scale}
+        />
+      )}
+      {/* Terminal velocity line */}
+      {canvasDims.width > 0 && terminalLineY < canvasDims.height && (
+        <svg
+          width={canvasDims.width}
+          height={canvasDims.height}
+          style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+        >
+          <line
+            x1={0}
+            y1={terminalLineY}
+            x2={canvasDims.width}
+            y2={terminalLineY}
+            stroke="#ff6b6b"
+            strokeWidth={2}
+            strokeDasharray="8 4"
+          />
+          <text
+            x={10}
+            y={terminalLineY - 6}
+            fill="#ff6b6b"
+            fontSize="11"
+            fontFamily="monospace"
+          >
+            Límite de Velocidad Terminal (99%)
+          </text>
+        </svg>
+      )}
       <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-white/5" />
-      <LegendOverlay />
+      <LegendOverlay showForceVectors={showForceVectors} />
     </div>
   )
 }
@@ -245,7 +317,17 @@ function drawAngle(ctx: CanvasRenderingContext2D, x: number, y: number, vx_px: n
   ctx.fillText(`${deg.toFixed(1)}°`, x + 6, y - 6)
 }
 
-function LegendOverlay() {
+function LegendOverlay({ showForceVectors }: { showForceVectors: boolean }) {
+  if (showForceVectors) {
+    return (
+      <div className="absolute top-2 left-2 text-xs text-white/70 bg-black/30 backdrop-blur px-2 py-1 rounded border border-white/10">
+        <div className="flex items-center gap-2"><span className="w-2 h-2 bg-yellow-400 inline-block rounded" /> Fg (amarillo)</div>
+        <div className="flex items-center gap-2"><span className="w-2 h-2 bg-red-500 inline-block rounded" /> Fa (rojo)</div>
+        <div className="flex items-center gap-2"><span className="w-2 h-2 bg-white inline-block rounded" /> Fneta (blanco)</div>
+      </div>
+    )
+  }
+  
   return (
     <div className="absolute top-2 left-2 text-xs text-white/70 bg-black/30 backdrop-blur px-2 py-1 rounded border border-white/10">
       <div className="flex items-center gap-2"><span className="w-2 h-2 bg-cyan inline-block rounded" /> Vx (cian)</div>
