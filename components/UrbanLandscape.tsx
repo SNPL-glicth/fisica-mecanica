@@ -16,7 +16,17 @@ export default function UrbanLandscape({ width, height, scale }: Props) {
     <svg 
       width={width} 
       height={height} 
-      style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        pointerEvents: 'none',
+        overflow: 'hidden',
+        maxWidth: '100%',
+        maxHeight: '100%'
+      }}
     >
       {/* Street/Ground */}
       <rect

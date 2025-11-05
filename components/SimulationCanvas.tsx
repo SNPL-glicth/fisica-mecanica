@@ -256,7 +256,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
   const terminalLineY = terminalHeight * scale // Convert meters to pixels
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden rounded-lg">
       <canvas ref={canvasRef} className="w-full h-[50vh] rounded-lg border border-cyan/20" />
       {canvasDims.width > 0 && visualMode === 'physics' && (
         <PixelArtLandscape 

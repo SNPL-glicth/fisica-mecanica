@@ -1,4 +1,5 @@
 import './globals.css'
+import Navbar from '@/components/Navbar'
 
 export const metadata = {
   title: 'Lluvia y Leyes de Newton',
@@ -9,6 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className="dark">
       <body className="min-h-screen bg-background text-white antialiased">
+        <Navbar />
         {children}
       </body>
     </html>
