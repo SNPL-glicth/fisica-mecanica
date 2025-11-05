@@ -148,8 +148,10 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
       // Draw drops and vectors
       const r_px = Math.max(1, (diameterMM / 1000 / 2) * scale)
       const arrowScale = Math.max(0.05 * scale, 0.5) // px per (m/s)
-      // Adjust force scale to be visible: force is very small (~10^-5 N)
-      const forceScale = 1e6 * scale // px per N (scaled to make forces visible)
+      // Adjust force scale to be visible but compact
+      const forceScale = 5e5 * scale // px per N (scaled for clarity)
+      // Only show vectors on a sample of drops to avoid saturation
+      const vectorSampleInterval = 15 // Show vectors every N drops
 
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
@@ -176,10 +178,12 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
 
         // Only draw vectors if drop is above ground (85% of height)
         const isAboveGround = y < height * 0.85
+        // Only show vectors on sampled drops to avoid visual saturation
+        const shouldShowVectors = i % vectorSampleInterval === 0
         
-        if (isAboveGround) {
+        if (isAboveGround && shouldShowVectors) {
           if (!showForceVectors) {
-            // VELOCITY VECTORS
+            // VELOCITY VECTORS (on sample)
             const vx_px = vx * arrowScale
             const vy_px = d.vy * arrowScale
             const vrx = vx_px
@@ -192,12 +196,10 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
             // Vr (green)
             drawArrow(ctx, x, y, x + vrx, y + vry, '#00ff88')
 
-            // Angle only for first few drops to reduce clutter
-            if (i % 20 === 0) {
-              drawAngle(ctx, x, y, vx_px, vy_px)
-            }
+            // Angle for sampled drops
+            drawAngle(ctx, x, y, vx_px, vy_px)
           } else {
-            // FORCE VECTORS
+            // FORCE VECTORS (on sample only)
             const d_m = diameterMM / 1000
             const m = computeMass(d_m)
             const A = computeArea(d_m)
@@ -206,7 +208,7 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
             // Fg (gravity) - yellow, pointing down
             const Fg = m * g
             const Fg_px = Fg * forceScale
-            drawArrow(ctx, x, y, x, y + Fg_px, '#ffcc00', 2)
+            drawArrow(ctx, x, y, x, y + Fg_px, '#ffcc00', 2.5)
             
             // Fa (drag) - red, pointing opposite to Vr
             const Vr_ms = Math.hypot(vx, d.vy)
@@ -217,13 +219,13 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
             const angle = Math.atan2(d.vy, vx)
             const Fa_x = -Math.cos(angle) * Fa_px
             const Fa_y = -Math.sin(angle) * Fa_px
-            drawArrow(ctx, x, y, x + Fa_x, y + Fa_y, '#ff4444', 2)
+            drawArrow(ctx, x, y, x + Fa_x, y + Fa_y, '#ff4444', 2.5)
             
             // Fnet (net force) - white
             const Fnet = Fg - Fa // scalar net force magnitude
             const Fnet_px = Math.abs(Fnet) * forceScale
             const Fnet_dir = Fnet > 0 ? 1 : -1 // down if positive, up if negative
-            drawArrow(ctx, x, y, x, y + Fnet_dir * Fnet_px, '#ffffff', 2)
+            drawArrow(ctx, x, y, x, y + Fnet_dir * Fnet_px, '#ffffff', 2.5)
           }
         }
       })
