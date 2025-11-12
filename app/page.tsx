@@ -6,6 +6,7 @@ import VectorDiagram from '@/components/VectorDiagram'
 import DataTable from '@/components/DataTable'
 import Formulas from '@/components/Formulas'
 import ThemeToggle from '@/components/ThemeToggle'
+import RealDataSection from '@/components/RealDataSection'
 import { useState, useMemo } from 'react'
 import { angleThetaDeg, computeArea, computeMass, fallTime, resultantVr, terminalVelocityY } from '@/lib/physics'
 
@@ -62,7 +63,7 @@ export default function Page() {
         </div>
       </header>
 
-      <section className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+      <section id="simulacion" className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
         {/* Izquierda 60% */}
         <div className="lg:col-span-3 xl:col-span-3 space-y-3 sm:space-y-4">
           <div className="card p-2">
@@ -80,7 +81,7 @@ export default function Page() {
           </div>
 
           {/* Fórmulas debajo del simulador - oculto en móvil por defecto */}
-          <div className="card p-3 sm:p-4 hidden sm:block">
+          <div id="el-modelo" className="card p-3 sm:p-4">
             <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-cyan">Fundamento Físico y Fórmulas Clave</h2>
             <Formulas impactDt={derived.impactDt} Cd={Cd} />
           </div>
@@ -133,6 +134,11 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      {/* Datos reales */}
+      <div className="mt-6 md:mt-10 max-w-7xl mx-auto px-3 sm:px-4">
+        <RealDataSection />
+      </div>
     </main>
   )
 }
