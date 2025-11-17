@@ -13,44 +13,32 @@ export default function Navbar() {
             Física Lluvia
           </Link>
           
-          {/* Desktop menu - centered and evenly spaced */}
+          {/* Desktop menu */}
           <div className="hidden md:flex items-center justify-center flex-1 gap-8">
             <Link 
-              href="/#simulacion" 
+              href="/prototipo-fisico" 
               className="text-sm text-white/70 hover:text-white transition-colors whitespace-nowrap px-4 py-2 rounded hover:bg-white/5"
             >
-              Simulación
+              Prototipo físico
             </Link>
             <Link 
-              href="/#el-modelo" 
-              className="text-sm text-white/70 hover:text-white transition-colors whitespace-nowrap px-4 py-2 rounded hover:bg-white/5"
-            >
-              El modelo
-            </Link>
-            <Link 
-              href="/#datos-reales" 
+              href="/datos-reales" 
               className="text-sm text-white/70 hover:text-white transition-colors whitespace-nowrap px-4 py-2 rounded hover:bg-white/5"
             >
               Datos reales
             </Link>
           </div>
           
-          {/* Mobile menu - compact and evenly spaced */}
+          {/* Mobile menu */}
           <div className="md:hidden flex items-center flex-1 justify-end gap-2">
             <Link 
-              href="/#simulacion" 
+              href="/prototipo-fisico" 
               className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1.5 rounded hover:bg-white/5"
             >
-              Simulación
+              Prototipo
             </Link>
             <Link 
-              href="/#el-modelo" 
-              className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1.5 rounded hover:bg-white/5"
-            >
-              Modelo
-            </Link>
-            <Link 
-              href="/#datos-reales" 
+              href="/datos-reales" 
               className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1.5 rounded hover:bg-white/5"
             >
               Datos

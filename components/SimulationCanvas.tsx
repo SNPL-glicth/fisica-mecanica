@@ -32,14 +32,17 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
 
   // Resize canvas to container
   useEffect(() => {
-    const canvas = canvasRef.current!
-    const parent = canvas.parentElement!
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const parent = canvas.parentElement
+    if (!parent) return
 
     const resize = () => {
       // Limit DPR to 2 for performance on high-DPI mobile devices
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const w = parent.clientWidth
-      const h = Math.max(280, Math.min(640, Math.round((parent.clientWidth) * 0.66)))
+      const h = Math.max(280, Math.min(640, Math.round(parent.clientWidth * 0.66)))
       canvas.style.width = w + 'px'
       canvas.style.height = h + 'px'
       canvas.width = Math.floor(w * dpr)
@@ -76,8 +79,12 @@ export default function SimulationCanvas({ wind, diameterMM, heightM, paused, rh
   useEffect(() => {
     const g = 9.81
     const step = (ts: number) => {
-      const canvas = canvasRef.current!
-      const ctx = canvas.getContext('2d')!
+      const canvas = canvasRef.current
+      if (!canvas) return
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const width = canvas.width
       const height = canvas.height

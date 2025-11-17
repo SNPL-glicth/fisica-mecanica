@@ -6,7 +6,6 @@ import VectorDiagram from '@/components/VectorDiagram'
 import DataTable from '@/components/DataTable'
 import Formulas from '@/components/Formulas'
 import ThemeToggle from '@/components/ThemeToggle'
-import RealDataSection from '@/components/RealDataSection'
 import { useState, useMemo } from 'react'
 import { angleThetaDeg, computeArea, computeMass, fallTime, resultantVr, terminalVelocityY } from '@/lib/physics'
 
@@ -47,11 +46,11 @@ export default function Page() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">
-              Lluvia, Inercia y Fuerza: Simulación Interactiva
+              Simulación de lluvia
             </h1>
             <p className="text-white/70 mt-1 sm:mt-2 text-sm sm:text-base hidden sm:block">
-              Dark mode estilo Cursor. Ajusta viento, tamaño de gota y altura. Observa cómo la inercia (1ª Ley) y
-              F=ma (2ª Ley) gobiernan la caída.
+              Ajusta el viento, el tamaño de la gota y la altura para estudiar la trayectoria y las fuerzas que actúan
+              sobre la lluvia.
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -135,10 +134,6 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Datos reales */}
-      <div className="mt-6 md:mt-10 max-w-7xl mx-auto px-3 sm:px-4">
-        <RealDataSection />
-      </div>
     </main>
   )
 }
