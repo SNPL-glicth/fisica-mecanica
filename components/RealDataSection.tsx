@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRainData, MonthBucket } from "@/lib/useRainData";
 import PieChart from "./PieChart";
+import MinecraftRainBackdrop from "./MinecraftRainBackdrop";
 
 export default function RealDataSection() {
   const { loading, error, total, count, avg, monthsSorted, lastThreeMonths } =
@@ -10,7 +11,8 @@ export default function RealDataSection() {
   const [selectedMonth, setSelectedMonth] = useState<MonthBucket | null>(null);
 
   return (
-    <section id="datos-reales" className="space-y-6">
+    <section id="datos-reales" className="relative space-y-6">
+      <MinecraftRainBackdrop />
       {/* Bloque 1: título y resumen global */}
       <div className="rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5 space-y-3">
         <header className="space-y-1">
@@ -33,11 +35,28 @@ export default function RealDataSection() {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <SummaryCard label="Registros" value={count} />
-            <SummaryCard label="Suma (mm)" value={total.toFixed(1)} mono />
-            <SummaryCard label="Promedio (mm)" value={avg.toFixed(2)} mono />
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <SummaryCard label="Registros" value={count} />
+              <SummaryCard label="Suma (mm)" value={total.toFixed(1)} mono />
+              <SummaryCard label="Promedio (mm)" value={avg.toFixed(2)} mono />
+            </div>
+
+            {/* Mini contexto físico: cómo conectar estos mm de lluvia con la mecánica */}
+            <div className="mt-3 rounded-lg bg-slate-900/80 border border-white/10 px-3 py-2 text-[11px] sm:text-xs text-white/70 space-y-1">
+              <p>
+                <strong>Cómo leer estos datos:</strong> cada valor de precipitación (mm) indica cuántos milímetros de
+                agua cayeron sobre <span className="mono">1 m²</span> en ese día. Por ejemplo, <span className="mono">10 mm</span>
+                equivalen a <span className="mono">10 L</span> de agua por metro cuadrado.
+              </p>
+              <p>
+                Si conoces ese volumen, puedes estimar masa (<span className="mono">m = ρ·V</span>) y luego la fuerza
+                de la gravedad <span className="mono">Fg ≈ m·g</span> que acelera las gotas. Esa aceleración está
+                conectada con la 2ª Ley de Newton (<span className="mono">F = m·a</span>) y explica por qué la lluvia
+                gana velocidad al caer hasta que el rozamiento del aire la equilibra.
+              </p>
+            </div>
+          </>
         )}
       </div>
 
@@ -54,9 +73,15 @@ export default function RealDataSection() {
 
           <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
             {lastThreeMonths.map((month) => {
+              // Si todos los días tienen lluvia (p.ej. octubre), el segmento de "sin lluvia" sería 0
+              // y el gráfico se vería como un círculo sólido. Para mantener contraste visual,
+              // añadimos un valor mínimo muy pequeño al segmento sin lluvia.
+              const hasOnlyRain = month.rainyDays > 0 && month.dryDays === 0;
+              const dryValue = hasOnlyRain ? 0.001 : month.dryDays;
+
               const pieData = [
                 { label: "Días con lluvia", value: month.rainyDays },
-                { label: "Días sin lluvia", value: month.dryDays },
+                { label: "Días sin lluvia", value: dryValue },
               ];
               return (
                 <button
@@ -79,6 +104,18 @@ export default function RealDataSection() {
                 </button>
               );
             })}
+          </div>
+
+          {/* leyenda de colores del gráfico de pastel */}
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] sm:text-xs text-white/70">
+            <div className="flex items-center gap-1">
+              <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: '#22d3ee' }} />
+              <span>Días con lluvia</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: '#4ade80' }} />
+              <span>Días sin lluvia</span>
+            </div>
           </div>
         </div>
       )}

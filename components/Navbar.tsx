@@ -27,6 +27,12 @@ export default function Navbar() {
             >
               Datos reales
             </Link>
+            <Link 
+              href="/formulas" 
+              className="text-sm text-white/70 hover:text-white transition-colors whitespace-nowrap px-4 py-2 rounded hover:bg-white/5"
+            >
+              Fórmulas
+            </Link>
           </div>
           
           {/* Mobile menu */}
@@ -42,6 +48,12 @@ export default function Navbar() {
               className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1.5 rounded hover:bg-white/5"
             >
               Datos
+            </Link>
+            <Link 
+              href="/formulas" 
+              className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1.5 rounded hover:bg-white/5"
+            >
+              Fórmulas
             </Link>
           </div>
         </div>

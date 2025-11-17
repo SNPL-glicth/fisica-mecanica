@@ -19,6 +19,10 @@ export type MonthBucket = {
   maxDay: RainRecord | null;
 };
 
+// Umbral mínimo para considerar un día como "lluvioso" (en mm).
+// Valores muy pequeños suelen ser ruido o lloviznas casi imperceptibles.
+const RAIN_THRESHOLD_MM = 0.2;
+
 export function useRainData() {
   const [records, setRecords] = useState<RainRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +30,7 @@ export function useRainData() {
 
   useEffect(() => {
     let cancel = false;
+
     async function load() {
       try {
         const res = await fetch("/api/lluvia");
@@ -40,23 +45,24 @@ export function useRainData() {
         setLoading(false);
       }
     }
+
     load();
     return () => {
       cancel = true;
     };
   }, []);
 
-  const { byMonth, monthsSorted, lastThreeMonths, total, count, avg } = useMemo(() => {
+  const { monthsSorted, lastThreeMonths, total, count, avg } = useMemo(() => {
+    // Agrupa registros por mes (YYYY-MM)
     const groups: Record<string, RainRecord[]> = {};
     for (const r of records) {
       const d = new Date(r.date);
       if (isNaN(d.getTime())) continue;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(r);
+      (groups[key] ??= []).push(r);
     }
 
-    const entries: MonthBucket[] = Object.entries(groups)
+    const monthsSorted: MonthBucket[] = Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, recs]) => {
         recs.sort((a, b) => a.date.localeCompare(b.date));
@@ -65,14 +71,16 @@ export function useRainData() {
         const label = !isNaN(d.getTime())
           ? d.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
           : key;
+
         const total = recs.reduce((acc, r) => acc + (r.precipitation || 0), 0);
-        const rainyDays = recs.filter((r) => (r.precipitation || 0) > 0).length;
+        const rainyDays = recs.filter((r) => (r.precipitation || 0) >= RAIN_THRESHOLD_MM).length;
         const dryDays = recs.length - rainyDays;
         const maxDay = recs.reduce<RainRecord | null>((max, r) => {
           if (!max) return r;
           return r.precipitation > max.precipitation ? r : max;
         }, null);
         const avgPerDay = recs.length > 0 ? total / recs.length : 0;
+
         return {
           monthKey: key,
           label,
@@ -85,20 +93,12 @@ export function useRainData() {
         };
       });
 
-  const monthsSorted = entries;
-  const lastThreeMonths = entries.slice(-3);
-  const total = records.reduce((acc, r) => acc + (r.precipitation || 0), 0);
-  const count = records.length;
-  const avg = count > 0 ? total / count : 0;
+    const lastThreeMonths = monthsSorted.slice(-3);
+    const total = records.reduce((acc, r) => acc + (r.precipitation || 0), 0);
+    const count = records.length;
+    const avg = count > 0 ? total / count : 0;
 
-    return {
-      byMonth: groups,
-      monthsSorted,
-      lastThreeMonths,
-      total,
-      count,
-      avg,
-    };
+    return { monthsSorted, lastThreeMonths, total, count, avg };
   }, [records]);
 
   return {
